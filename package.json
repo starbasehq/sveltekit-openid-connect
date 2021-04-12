@@ -6,7 +6,7 @@
   "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
   "author": "ChrisOgden <13042897+ChrisOgden@users.noreply.github.com>",
   "license": "MIT",
-	"type": "module",
+  "type": "module",
   "dependencies": {
     "base64url": "^3.0.1",
     "clone": "^2.1.2",
