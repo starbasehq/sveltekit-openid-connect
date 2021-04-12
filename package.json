@@ -1,0 +1,42 @@
+{
+  "name": "sveltekit-openid-connect",
+  "version": "1.0.0",
+  "description": "Sveltekit module to proect web applications using OpenID Connect.",
+  "main": "index.js",
+  "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
+  "author": "ChrisOgden <13042897+ChrisOgden@users.noreply.github.com>",
+  "license": "MIT",
+	"type": "module",
+  "dependencies": {
+    "base64url": "^3.0.1",
+    "clone": "^2.1.2",
+    "cookie": "^0.4.1",
+    "futoin-hkdf": "^1.3.2",
+    "http-errors": "^1.7.3",
+    "joi": "^17.4.0",
+    "jose": "^2.0.0",
+    "on-headers": "^1.0.2",
+    "openid-client": "^4.6.0",
+    "p-memoize": "^4.0.0",
+    "url-join": "^4.0.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^12.1.1",
+    "@commitlint/config-conventional": "^12.1.1",
+    "eslint": "^7.24.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "husky": "^6.0.0"
+  },
+  "engines": {
+    "node": "^10.19.0 || >=12.0.0 < 13 || >=13.7.0 < 14 || >= 14.2.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run commit:format",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  }
+}

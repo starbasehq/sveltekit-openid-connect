@@ -1,0 +1,17 @@
+{
+	"env": {
+		"es6": true,
+		"node": true,
+		"mocha": true
+	},
+	"extends": "eslint:recommended",
+	"rules": {
+		"no-useless-escape": 1,
+		"no-console": 0,
+		"linebreak-style": ["error", "unix"]
+	},
+	"parserOptions": {
+		"ecmaVersion": 2018,
+		"sourceType": "module"
+	}
+}
