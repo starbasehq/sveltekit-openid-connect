@@ -1,6 +1,24 @@
+# ⚠️⚠️ WARNING: This is not fully tested, there are unnecessary console.logs as well as some unimplemented code. Open issues for questions or concerns ⚠️⚠️
+
 # SvelteKit OpenID Connect
 
 This is an attempt to port [express-openid-connect](https://github.com/auth0/express-openid-connect) for use with SvelteKit
+
+[![NPM version](https://img.shields.io/npm/v/sveltekit-openid-connect.svg?style=flat-square)](https://npmjs.org/package/sveltekit-openid-connect)
+
+## Table of Contents
+
+- [Documentation](#documentation)
+- [Install](#install)
+- [Getting Started](#getting-started)
+- [Architecture](./ARCHITECTURE.md)
+- [Contributing](#contributing)
+- [Troubleshooting](./TROUBLESHOOTING.md)
+- [FAQs](./FAQ.md)
+- [Support + Feedback](#support--feedback)
+- [Vulnerability Reporting](#vulnerability-reporting)
+- [What is Auth0](#what-is-auth0)
+- [License](#license)
 
 ## Install (Pending)
 
