@@ -1,13 +1,13 @@
 {
   "name": "sveltekit-openid-connect",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "SvelteKit module to proect web applications using OpenID Connect.",
-	"keywords": [
-		"svelte",
-		"sveltekit",
-		"openid",
-		"auth0"
-	],
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "openid",
+    "auth0"
+  ],
   "main": "index.js",
   "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
   "author": "ChrisOgden <13042897+ChrisOgden@users.noreply.github.com>",
