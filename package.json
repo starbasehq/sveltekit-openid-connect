@@ -1,6 +1,6 @@
 {
   "name": "sveltekit-openid-connect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sveltekit module to proect web applications using OpenID Connect.",
   "main": "index.js",
   "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
@@ -8,7 +8,9 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "release": "node utils/changelog.js",
+    "release:dryRun": "node utils/changelog.js --dryRun"
   },
   "mocha": {
     "exit": true,

@@ -5,10 +5,11 @@
  * 1. Group by git tags
  * 2. Group by commit types
  */
-const yargs = require('yargs')
-const standardVersion = require('standard-version')
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import standardVersion from 'standard-version'
 // Process CLI arguments
-const args = yargs
+const args = yargs(hideBin(process.argv))
 	.usage('Usage: $0')
 	.help('h')
 	.options({
