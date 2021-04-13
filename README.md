@@ -1,20 +1,17 @@
-# ⚠️⚠️ WARNING: This is not fully tested, there are unnecessary console.logs as well as some unimplemented code. Open issues for questions or concerns ⚠️⚠️
-
 # SvelteKit OpenID Connect
 
 This is an attempt to port [express-openid-connect](https://github.com/auth0/express-openid-connect) for use with SvelteKit
 
 [![NPM version](https://img.shields.io/npm/v/sveltekit-openid-connect.svg?style=flat-square)](https://npmjs.org/package/sveltekit-openid-connect)
 
+## ⚠️⚠️ WARNING: This is not fully tested, there are unnecessary console.logs as well as some unimplemented code. Open issues for questions or concerns ⚠️⚠️
+
 ## Table of Contents
 
 - [Documentation](#documentation)
 - [Install](#install)
 - [Getting Started](#getting-started)
-- [Architecture](./ARCHITECTURE.md)
 - [Contributing](#contributing)
-- [Troubleshooting](./TROUBLESHOOTING.md)
-- [FAQs](./FAQ.md)
 - [Support + Feedback](#support--feedback)
 - [Vulnerability Reporting](#vulnerability-reporting)
 - [What is Auth0](#what-is-auth0)
@@ -29,6 +26,232 @@ npm install sveltekit-openid-connect
 ```
 
 ## Getting Started
+
+### Initializing
+
+> src/hooks.js || src/hooks/index.js
+
+```js
+import * as cookie from 'cookie'
+import mock from 'mock-http'
+import { appSession } from 'sveltekit-openid-connect'
+import fetch from 'node-fetch'
+
+const auth0config = {
+    attemptSilentLogin: true,
+    authRequired: false,
+    auth0Logout: true, // Boolean value to enable Auth0's logout feature.
+    baseURL: AUTH0_BASE_URL,
+    clientID: AUTH0_CLIENT_ID,
+    issuerBaseURL: `https://${AUTH0_DOMAIN}`,
+    secret: COOKIE_SECRET,
+    clientSecret: AUTH0_CLIENT_SECRET,
+    authorizationParams: {
+        scope: 'openid profile offline_access email',
+        response_type: 'code id_token',
+        audience: AUTH0_AUDIENCE
+    },
+    session: {
+        name: 'sessionName', // Replace with custom session name
+        cookie: {
+            path: '/'
+        },
+        absoluteDuration: 86400,
+        rolling: false,
+        rollingDuration: false
+    }
+}
+
+export async function getContext ({ body, headers, path, query, params }) {
+    const context = {}
+    const cookies = cookie.parse(headers.cookie || '')
+    const req = new mock.Request({
+        url: path,
+        headers
+    })
+    req.cookies = cookies
+
+    try {
+        const contextSession = await appSession(auth0config)(req)
+        if (contextSession.user) {
+            context.user = contextSession.user
+            context.oidc = contextSession.oidc
+        }
+    } catch (err) {
+        console.error('problem getting app session', err.message)
+        context.redirect = '/auth/login'
+    }
+    return context
+}
+
+export async function getSession ({ context }) {
+    const session = {
+        isAuthenticated: !!context.user,
+        user: context.user && context.user
+    }
+
+    if (context.user) {
+        // TODO: We need to enrich the user
+        const userUrl = `${API_HOST}/api/users/me`
+        const userProfile = await fetch(userUrl, {
+            headers: {
+                Authorization: `Bearer ${context.oidc.access_token}`
+            }
+        })
+            .then(res => res.json())
+    }
+
+    return session
+}
+```
+
+### Logging in
+
+The endpoint route can be different but must be changed in the config block for routes
+> src/routes/auth/login.js
+
+```js
+import { Auth } from 'sveltekit-openid-connect'
+
+const auth0config = {
+    attemptSilentLogin: true,
+    authRequired: false,
+    auth0Logout: true, // Boolean value to enable Auth0's logout feature.
+    baseURL: AUTH0_BASE_URL,
+    clientID: AUTH0_CLIENT_ID,
+    issuerBaseURL: `https://${AUTH0_DOMAIN}`,
+    secret: COOKIE_SECRET,
+    clientSecret: AUTH0_CLIENT_SECRET,
+    authorizationParams: {
+        scope: 'openid profile offline_access email groups permissions roles',
+        response_type: 'code id_token',
+        audience: AUTH0_AUDIENCE
+    },
+    routes: {
+        login: '/auth/login',
+        logout: '/auth/logout',
+        callback: '/auth/callback'
+    }
+    // afterCallback
+}
+
+const auth0 = new Auth(auth0config)
+
+export async function get (request, ...otherProps) {
+    const loginResponse = await auth0.handleLogin()
+
+    return {
+        headers: {
+            location: loginResponse.authorizationUrl,
+            'Set-Cookie': loginResponse.cookies
+        },
+        status: 302,
+        body: {}
+    }
+}
+```
+
+### Handling the callback
+
+The endpoint route can be different but must be changed in the config block for routes
+> src/routes/auth/calback.js
+
+```js
+import _ from 'lodash'
+import * as cookie from 'cookie'
+import { Auth, appSession } from 'sveltekit-openid-connect'
+import mock from 'mock-http'
+
+const {
+    AUTH0_DOMAIN,
+    AUTH0_BASE_URL,
+    AUTH0_CLIENT_ID,
+    AUTH0_CLIENT_SECRET,
+    COOKIE_SECRET,
+    AUTH0_AUDIENCE
+} = process.env
+
+const auth0config = {
+    attemptSilentLogin: true,
+    authRequired: false,
+    auth0Logout: true, // Boolean value to enable Auth0's logout feature.
+    baseURL: AUTH0_BASE_URL,
+    clientID: AUTH0_CLIENT_ID,
+    issuerBaseURL: `https://${AUTH0_DOMAIN}`,
+    secret: COOKIE_SECRET,
+    clientSecret: AUTH0_CLIENT_SECRET,
+    authorizationParams: {
+        scope: 'openid profile offline_access email',
+        response_type: 'code id_token',
+        audience: AUTH0_AUDIENCE
+    },
+    session: {
+        name: 'sessionName',
+        cookie: {
+            path: '/'
+        },
+        absoluteDuration: 86400,
+        rolling: false,
+        rollingDuration: false
+    }
+}
+
+const auth0 = new Auth(auth0config)
+
+export async function post (request) {
+    const { headers, body } = request
+    const cookies = cookie.parse(headers.cookie || '')
+    if (_.isObject(cookies)) {
+        const req = new mock.Request({
+            url: request.path,
+            method: 'POST',
+            headers,
+            buffer: Buffer.from(JSON.stringify({
+                code: body.get('code'),
+                state: body.get('state'),
+                id_token: body.get('id_token')
+            }))
+        })
+        req.cookies = cookies
+        req.body = {
+            code: body.get('code'),
+            state: body.get('state'),
+            id_token: body.get('id_token')
+        }
+
+        const res = new mock.Response()
+
+        const authResponse = await auth0.handleCallback(req, res, cookies)
+        const session = await appSession(auth0config)(req, res, authResponse.session)
+
+        return {
+            headers: {
+                location: '/',
+                'set-cookie': _.concat(authResponse.cookies, session.cookies)
+            },
+            status: 302,
+            body: {
+                error: false
+            }
+        }
+    } else {
+        return {
+            body: {
+                error: true
+            }
+        }
+    }
+}
+
+```
+
+### Destroying the Session (NOT IMPLEMENTED YET)
+
+> src/routes/auth/logout.js
+
+```js
+/** NOT IMPLEMENTED YET **/
+```
 
 ## Contributing
 
@@ -48,6 +271,23 @@ When you're ready to push your changes, please run the lint command first:
 ```bash
 npm run lint
 ```
+
+## Support + Feedback
+
+Please use the [Issues queue](https://github.com/starbasehq/sveltekit-openid-connect/issues) in this repo for questions and feedback.
+
+## What is Auth0?
+
+Auth0 helps you to easily:
+
+- implement authentication with multiple identity providers, including social (e.g., Google, Facebook, Microsoft, LinkedIn, GitHub, Twitter, etc), or enterprise (e.g., Windows Azure AD, Google Apps, Active Directory, ADFS, SAML, etc.)
+- log in users with username/password databases, passwordless, or multi-factor authentication
+- link multiple user accounts together
+- generate signed JSON Web Tokens to authorize your API calls and flow the user identity securely
+- access demographics and analytics detailing how, when, and where users are logging in
+- enrich user profiles from other data sources using customizable JavaScript rules
+
+[Why Auth0?](https://auth0.com/why-auth0)
 
 ## License
 
