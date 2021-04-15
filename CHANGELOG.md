@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.0.2...v1.1.0) (2021-04-15)
+
+
+### Features
+
+* add base support for logout functionality ([45c8b72](https://github.com/starbasehq/sveltekit-openid-connect/commit/45c8b7223d295cffab2386b1b2167f3af5f8fdf5))
+
+
+### 📝 Docs
+
+* update README for logout ([550efd2](https://github.com/starbasehq/sveltekit-openid-connect/commit/550efd2318576416e84b545ef2697441ae665348))
+
+
+### Chore
+
+* fix eslint errors ([d56992b](https://github.com/starbasehq/sveltekit-openid-connect/commit/d56992bfb267ff407703ead3b184c5508673942b))
+
 ### 1.0.2 (2021-04-13)
 
 
