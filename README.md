@@ -132,7 +132,6 @@ const auth0config = {
         logout: '/auth/logout',
         callback: '/auth/callback'
     }
-    // afterCallback
 }
 
 const auth0 = new Auth(auth0config)
@@ -154,7 +153,7 @@ export async function get (request, ...otherProps) {
 ### Handling the callback
 
 The endpoint route can be different but must be changed in the config block for routes
-> src/routes/auth/calback.js
+> src/routes/auth/callback.js
 
 ```js
 import _ from 'lodash'
@@ -250,7 +249,72 @@ export async function post (request) {
 > src/routes/auth/logout.js
 
 ```js
-/** NOT IMPLEMENTED YET **/
+import * as cookie from 'cookie'
+import { Auth } from 'sveltekit-openid-connect'
+import mock from 'mock-http'
+
+const {
+    AUTH0_DOMAIN,
+    AUTH0_BASE_URL,
+    AUTH0_CLIENT_ID,
+    AUTH0_CLIENT_SECRET,
+    COOKIE_SECRET,
+    AUTH0_AUDIENCE
+} = process.env
+
+const auth0config = {
+    attemptSilentLogin: true,
+    authRequired: false, // Require authentication for all routes.
+    auth0Logout: true, // Boolean value to enable Auth0's logout feature.
+    baseURL: AUTH0_BASE_URL,
+    clientID: AUTH0_CLIENT_ID,
+    issuerBaseURL: `https://${AUTH0_DOMAIN}`,
+    secret: COOKIE_SECRET,
+    clientSecret: AUTH0_CLIENT_SECRET,
+    authorizationParams: {
+        scope: 'openid profile offline_access email groups permissions roles',
+        response_type: 'code id_token',
+        audience: AUTH0_AUDIENCE
+    },
+    session: {
+        name: 'sessionName',
+        cookie: {
+            path: '/'
+        },
+        absoluteDuration: 86400,
+        rolling: false,
+        rollingDuration: false
+    },
+    routes: {
+        login: '/auth/login',
+        logout: '/auth/logout',
+        callback: '/auth/callback'
+    }
+}
+
+const auth0 = new Auth(auth0config)
+
+export async function get (request) {
+    const { headers } = request
+    const cookies = cookie.parse(headers.cookie || '')
+    const req = new mock.Request({
+        url: request.path,
+        headers
+    })
+    req.cookies = cookies
+
+    const res = new mock.Response()
+    const logoutResponse = await auth0.handleLogout(req, res, cookies, request.context)
+
+    return {
+        headers: {
+            location: logoutResponse.returnURL,
+            'Set-Cookie': logoutResponse.cookies
+        },
+        status: 302,
+        body: {}
+    }
+}
 ```
 
 ## Contributing
