@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.1.0...v1.2.0) (2021-04-16)
+
+
+### Features
+
+* add rollup for bundling package ([ad014de](https://github.com/starbasehq/sveltekit-openid-connect/commit/ad014de1b91a1d9519fb5ec3e81bb7d07b71a748))
+
+
+### Chore
+
+* update structure for build/dist ([e8ed923](https://github.com/starbasehq/sveltekit-openid-connect/commit/e8ed923a920a8b32a1ef6afe5c1b7c397f6ed446))
+
 ## [1.1.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.0.2...v1.1.0) (2021-04-15)
 
 

@@ -8,7 +8,7 @@ import { strict as assert } from 'assert'
 
 // const debug = require('./debug')('context')
 import getClient from './client'
-import { encodeState } from '../lib/hooks/getLoginState'
+import { encodeState } from './hooks/getLoginState'
 // const { cancelSilentLogin } = require('../middleware/attemptSilentLogin')
 import weakRef from './weakCache'
 
