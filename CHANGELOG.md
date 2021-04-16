@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.1](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.0...v1.2.1) (2021-04-16)
+
+
+### Bug Fixes
+
+* correct entrypoint for esm ([73c9a1b](https://github.com/starbasehq/sveltekit-openid-connect/commit/73c9a1b8c80483b5ab4746473130a4fc3f21fb14))
+
 ## [1.2.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.1.0...v1.2.0) (2021-04-16)
 
 
