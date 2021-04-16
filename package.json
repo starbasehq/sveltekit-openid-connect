@@ -12,7 +12,7 @@
     "auth"
   ],
   "main": "dist/bundle.cjs",
-  "esm": "dist/bundle.mjs",
+  "esm": "dist/bundle.js",
   "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
   "author": "ChrisOgden <13042897+ChrisOgden@users.noreply.github.com>",
   "license": "MIT",
