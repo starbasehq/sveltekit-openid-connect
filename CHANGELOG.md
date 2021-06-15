@@ -1,5 +1,17 @@
 # Changelog
 
+### [1.2.2](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.1...v1.2.2) (2021-06-15)
+
+
+### Chore
+
+* run npm update ([7d5caf8](https://github.com/starbasehq/sveltekit-openid-connect/commit/7d5caf890a9886b48b6278b6a13487137720702a))
+
+
+### 📝 Docs
+
+* update documentation for newer sveltekit builds ([952db16](https://github.com/starbasehq/sveltekit-openid-connect/commit/952db160aa433e787e5f4174551ac85bd9b37727))
+
 ### [1.2.1](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.0...v1.2.1) (2021-04-16)
 
 
