@@ -35,6 +35,7 @@ npm install sveltekit-openid-connect
 import * as cookie from 'cookie'
 import mock from 'mock-http'
 import { appSession } from 'sveltekit-openid-connect'
+import { SessionService } from '$lib/services' // This is a service that provides session storage, not a part of this package
 import fetch from 'node-fetch'
 
 const auth0config = {
@@ -62,35 +63,80 @@ const auth0config = {
     }
 }
 
-export async function getContext ({ body, headers, path, query, params }) {
-    const context = {}
-    const cookies = cookie.parse(headers.cookie || '')
-    const req = new mock.Request({
-        url: path,
-        headers
-    })
-    req.cookies = cookies
-
+export async function handle ({ request, resolve }) {
     try {
-        const contextSession = await appSession(auth0config)(req)
-        if (contextSession.user) {
-            context.user = contextSession.user
-            context.oidc = contextSession.oidc
+        request.locals.isAuthenticated = false
+        const cookies = cookie.parse(request.headers.cookie || '')
+        const { path, body, query, params } = request
+        let sessionCookie
+        const req = new mock.Request({
+            url: path,
+            headers
+        })
+        req.cookies = cookies
+
+        try {
+            if (cookies.session_id) { // Use if you are storing a session_id in a cookie to look up cookie in DB or other store
+                request.locals.sessionId = cookies.session_id
+                const session = await sessionService.get(cookies.session_id)
+                if (session) {
+                    // assign session information to request.locals here
+                    /*
+                        request.locals.user = session.data.user
+                    */
+                }
+            } else if (cookies[sessionName]) {
+                const contextSession = await appSession(auth0config)(req)
+
+                // Start section for creating session inside a session store
+                const { session, sessionId } = await sessionService.createSession(contextSession.oidc)
+                sessionCookie = cookie.serialize('session_id', sessionId, {
+                    httpOnly: true,
+                    maxAge: 60 * 60 * 24 * 1,
+                    sameSite: 'lax',
+                    path: '/'
+                })
+                // End session store
+
+                // assign session information to request.locals here from either contextSession or session
+                /*
+                    request.locals.user = session.data.user
+                */
+            } else {
+                logger.warn('No session found, better send to auth')
+                request.locals.redirect = '/auth/login'
+            }
+        } catch (err) {
+            console.error('problem getting app session', err.message)
+            context.redirect = '/auth/login'
+        }
+
+        const response = await resolve(request) // This is required by sveltekit
+
+        // Optional: add the session cookie
+        if (sessionCookie) {
+            const existingCookies = (response.headers && response.headers['set-cookie']) ? response.headers['set-cookie'] : []
+            response.headers['set-cookie'] = [...existingCookies, sessionCookie]
+        }
+
+        return {
+            ...response,
+            headers: {
+                ...response.headers
+            }
         }
     } catch (err) {
-        console.error('problem getting app session', err.message)
-        context.redirect = '/auth/login'
+        console.error('Problem running handle', err.message)
     }
-    return context
 }
 
 export async function getSession ({ context }) {
     const session = {
-        isAuthenticated: !!context.user,
-        user: context.user && context.user
+        isAuthenticated: !!request.locals.user,
+        user: request.locals.user && request.locals.user
     }
 
-    if (context.user) {
+    if (request.locals.user) {
         // TODO: We need to enrich the user
         const userUrl = `${API_HOST}/api/users/me`
         const userProfile = await fetch(userUrl, {
