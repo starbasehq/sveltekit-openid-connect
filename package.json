@@ -11,7 +11,7 @@
     "cookies",
     "auth"
   ],
-  "main": "dist/bundle.cjs",
+  "main": "dist/bundle.js",
   "esm": "dist/bundle.js",
   "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
   "author": "ChrisOgden <13042897+ChrisOgden@users.noreply.github.com>",
