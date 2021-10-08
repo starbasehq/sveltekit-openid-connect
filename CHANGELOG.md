@@ -1,5 +1,17 @@
 # Changelog
 
+### [1.2.3](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.2...v1.2.3) (2021-10-08)
+
+
+### Bug Fixes
+
+* change main entry point to be dist/bundle.js for newer sveltekit (may be breaking change) ([94514fd](https://github.com/starbasehq/sveltekit-openid-connect/commit/94514fd4e75111598f6c4817341a65293f792994))
+
+
+### Chore
+
+* run npm update ([8d3864b](https://github.com/starbasehq/sveltekit-openid-connect/commit/8d3864b5c0156cda1d3f69a65e6968e6011403f3))
+
 ### [1.2.2](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.1...v1.2.2) (2021-06-15)
 
 
