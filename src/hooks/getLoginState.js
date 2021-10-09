@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import base64url from 'base64url'
-// const debug = require('../debug')('getLoginState')
+// const debug = req_uire('../debug')('getLoginState')
 
 /**
  * Generate the state value for use during login transactions. It is used to store the intended

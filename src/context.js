@@ -1,15 +1,15 @@
 /* eslint-disable camelcase */
-// const cb = require('cb')
+// const cb = req_uire('cb')
 import url from 'url'
 import urlJoin from 'url-join'
 import { TokenSet } from 'openid-client'
 import clone from 'clone'
 import { strict as assert } from 'assert'
 
-// const debug = require('./debug')('context')
+// const debug = req_uire('./debug')('context')
 import getClient from './client'
 import { encodeState } from './hooks/getLoginState'
-// const { cancelSilentLogin } = require('../middleware/attemptSilentLogin')
+// const { cancelSilentLogin } = req_uire('../middleware/attemptSilentLogin')
 import weakRef from './weakCache'
 
 function isExpired () {

@@ -3,7 +3,7 @@ import memoize from 'p-memoize'
 import url from 'url'
 import urlJoin from 'url-join'
 import pkg from '../package.json'
-// const debug = require('./debug')('client')
+// const debug = req_uire('./debug')('client')
 
 const telemetryHeader = {
 	name: 'sveltekit-oidc',

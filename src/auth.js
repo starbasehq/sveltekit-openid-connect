@@ -1,7 +1,7 @@
-// const cb = require('cb')
+// const cb = req_uire('cb')
 import createError from 'http-errors'
 
-// const debug = require('../lib/debug')('auth')
+// const debug = req_uire('../lib/debug')('auth')
 import getConfig from './config'
 import getClient from './client'
 import TransientCookieHandler from './transientHandler'
