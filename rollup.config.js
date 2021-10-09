@@ -18,7 +18,7 @@ export default {
 		// 	plugins: [terser()]
 		// },
 		{
-			file: 'dist/bundle.js',
+			file: 'dist/bundle.mjs',
 			format: 'es'
 		},
 		// {

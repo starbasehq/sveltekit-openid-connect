@@ -11,8 +11,12 @@
     "cookies",
     "auth"
   ],
-  "main": "dist/bundle.js",
-  "esm": "dist/bundle.js",
+  "main": "dist/bundle.cjs",
+  "esm": "dist/bundle.mjs",
+  "exports": {
+    "import": "./dist/bundle.mjs",
+    "require": "./dist/bundle.cjs"
+  },
   "repository": "git@github.com:starbasehq/sveltekit-openid-connect.git",
   "author": "ChrisOgden <13042897+ChrisOgden@users.noreply.github.com>",
   "license": "MIT",
