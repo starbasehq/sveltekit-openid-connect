@@ -1,5 +1,17 @@
 # Changelog
 
+### [1.2.4](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.3...v1.2.4) (2021-10-09)
+
+
+### Chore
+
+* add _ inside require for commented out code ([f0d724a](https://github.com/starbasehq/sveltekit-openid-connect/commit/f0d724a2997970d8200eeba73859fecc5039909b))
+
+
+### Improvements
+
+* add exports definition in package.json ([9181b75](https://github.com/starbasehq/sveltekit-openid-connect/commit/9181b754c0ac3d110a07ee83752e1d8bd5e1e2fe))
+
 ### [1.2.3](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.2...v1.2.3) (2021-10-08)
 
 
