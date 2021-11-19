@@ -38,6 +38,7 @@ import { appSession } from 'sveltekit-openid-connect'
 import { SessionService } from '$lib/services' // This is a service that provides session storage, not a part of this package
 import fetch from 'node-fetch'
 
+const sessionName = 'sessionName'
 const auth0config = {
     attemptSilentLogin: true,
     authRequired: false,
@@ -108,7 +109,7 @@ export async function handle ({ request, resolve }) {
             }
         } catch (err) {
             console.error('problem getting app session', err.message)
-            context.redirect = '/auth/login'
+            request.locals.redirect = '/auth/login'
         }
 
         const response = await resolve(request) // This is required by sveltekit
@@ -130,7 +131,7 @@ export async function handle ({ request, resolve }) {
     }
 }
 
-export async function getSession ({ context }) {
+export async function getSession (request) {
     const session = {
         isAuthenticated: !!request.locals.user,
         user: request.locals.user && request.locals.user
@@ -141,7 +142,7 @@ export async function getSession ({ context }) {
         const userUrl = `${API_HOST}/api/users/me`
         const userProfile = await fetch(userUrl, {
             headers: {
-                Authorization: `Bearer ${context.oidc.access_token}`
+                Authorization: `Bearer ${request.locals.oidc.access_token}`
             }
         })
             .then(res => res.json())
@@ -350,7 +351,7 @@ export async function get (request) {
     req.cookies = cookies
 
     const res = new mock.Response()
-    const logoutResponse = await auth0.handleLogout(req, res, cookies, request.context)
+    const logoutResponse = await auth0.handleLogout(req, res, cookies, request.locals)
 
     return {
         headers: {
