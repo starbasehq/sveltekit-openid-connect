@@ -104,7 +104,7 @@ export async function handle ({ request, resolve }) {
                     request.locals.user = session.data.user
                 */
             } else {
-                logger.warn('No session found, better send to auth')
+                console.warn('No session found, better send to auth')
                 request.locals.redirect = '/auth/login'
             }
         } catch (err) {
