@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.6](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.5...v1.2.6) (2022-01-27)
+
+
+### Chore
+
+* update packages for dependabot alert for nanoid ([1e32ccd](https://github.com/starbasehq/sveltekit-openid-connect/commit/1e32ccda092e941f50d344db70d8c53f8383037b))
+
 ### [1.2.5](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.4...v1.2.5) (2022-01-27)
 
 
