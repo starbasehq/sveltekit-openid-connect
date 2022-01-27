@@ -1,5 +1,14 @@
 # Changelog
 
+### [1.2.5](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.4...v1.2.5) (2022-01-27)
+
+
+### 📝 Docs
+
+* closes [#5](https://github.com/starbasehq/sveltekit-openid-connect/issues/5) - improve example implementation code ([8ff5188](https://github.com/starbasehq/sveltekit-openid-connect/commit/8ff5188c74cc317f7ac32bec2483b840839ad80a)), closes [sveltejs/kit#3384](https://github.com/sveltejs/kit/issues/3384)
+* remove logger from example code ([cabbd0d](https://github.com/starbasehq/sveltekit-openid-connect/commit/cabbd0d38203157f616b86d06048da5add436c1b))
+* Update README with missing changes related to context and locals ([5b53509](https://github.com/starbasehq/sveltekit-openid-connect/commit/5b5350913db0134fe9353aecd0ba8f8831be5740))
+
 ### [1.2.4](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.3...v1.2.4) (2021-10-09)
 
 
