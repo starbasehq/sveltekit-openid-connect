@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.6...v1.3.0) (2022-09-07)
+
+
+### Features
+
+* add TokenUtils class ([29c9ff4](https://github.com/starbasehq/sveltekit-openid-connect/commit/29c9ff4efd7b1755ce78c8f2bc6877fdefa6029e))
+
+
+### Chore
+
+* update vulnerable packages ([3c3238b](https://github.com/starbasehq/sveltekit-openid-connect/commit/3c3238b4e0b988e78a1f5e5008dbd6bd2bc4fbc2))
+
 ### [1.2.6](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.5...v1.2.6) (2022-01-27)
 
 
