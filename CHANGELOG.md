@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.1](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.0...v1.4.1) (2022-09-08)
+
+
+### Bug Fixes
+
+* force new version for updated build ([b927861](https://github.com/starbasehq/sveltekit-openid-connect/commit/b927861831b059c418a4c1b677383029990fa9e8))
+
 ## [1.4.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.3.0...v1.4.0) (2022-09-08)
 
 
