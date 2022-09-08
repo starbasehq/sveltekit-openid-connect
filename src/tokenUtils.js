@@ -7,15 +7,14 @@ import jwtDecode from 'jwt-decode'
 import getConfig from './config'
 import { encryption as deriveKey } from './hkdf'
 
-let keystore = new JWKS.KeyStore()
 let current
-
 
 const alg = 'dir'
 const enc = 'A256GCM'
 
 export default class TokenUtils {
 	constructor (params) {
+		this.keystore = new JWKS.KeyStore()
 		this.config = getConfig(params)
 		this.secrets = Array.isArray(this.config.secret)
 		? this.config.secret
@@ -26,11 +25,11 @@ export default class TokenUtils {
 			if (i === 0) {
 				current = key
 			}
-			keystore.add(key)
+			this.keystore.add(key)
 		})
 
-		if (keystore.size === 1) {
-			keystore = current
+		if (this.keystore.size === 1) {
+			this.keystore = current
 		}
 		const {
 			absoluteDuration,
@@ -47,7 +46,7 @@ export default class TokenUtils {
 	}
 
 	decrypt (jwe) {
-		return JWE.decrypt(jwe, keystore, {
+		return JWE.decrypt(jwe, this.keystore, {
 			complete: true,
 			contentEncryptionAlgorithms: [enc],
 			keyManagementAlgorithms: [alg]
