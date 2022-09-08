@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.3.0...v1.4.0) (2022-09-08)
+
+
+### Features
+
+* add support for custom returnTo during login ([bfc4e3a](https://github.com/starbasehq/sveltekit-openid-connect/commit/bfc4e3aa9c6f55042362917c0ff754302a3bc7ac))
+
 ## [1.3.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.2.6...v1.3.0) (2022-09-07)
 
 
