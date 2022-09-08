@@ -105,7 +105,7 @@ export default class Auth {
 	async handleLogin (returnToQuery = '', returnUrl) {
 		let req, res, next
 		const oidc = new ResponseContext(this.config, req, res, next, this.transient)
-		const returnTo = returnUrl || this.config.baseURL + (returnToQuery)
+		const returnTo = (returnUrl || this.config.baseURL) + returnToQuery
 		const loginResponse = await oidc.login({ returnTo })
 		const { authorizationUrl } = loginResponse
 		const cookies = prepareCookies(loginResponse.cookies)
