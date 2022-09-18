@@ -4,7 +4,7 @@ This is an attempt to port [express-openid-connect](https://github.com/auth0/exp
 
 [![NPM version](https://img.shields.io/npm/v/sveltekit-openid-connect.svg?style=flat-square)](https://npmjs.org/package/sveltekit-openid-connect)
 
-## ⚠️⚠️ WARNING: This is not fully tested, there are unnecessary console.logs as well as some unimplemented code. Open issues for questions or concerns ⚠️⚠️
+## ⚠️ WARNING: This is not fully tested, there are unnecessary console.logs as well as some unimplemented code. Open issues for questions or concerns ⚠️
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ This is an attempt to port [express-openid-connect](https://github.com/auth0/exp
 
 ## Install (Pending)
 
-Node.js version **>=12.0.0** is recommended, but **^10.19.0** lts/dubnium is also supported.
+Node.js version **>=16.0.0** is recommended
 
 ```bash
 npm install sveltekit-openid-connect
@@ -29,12 +29,22 @@ npm install sveltekit-openid-connect
 
 ### Initializing
 
-> src/hooks.js || src/hooks/index.js
+> svelte.config.js
+```js
+const config = {
+	kit: {
+		csrf: { // This is required due to a breaking change in sveltekit see https://github.com/starbasehq/sveltekit-openid-connect/issues/11
+			checkOrigin: false
+		}
+	}
+}
+```
+
+> src/hooks.server.js
 
 ```js
 import * as cookie from 'cookie'
-import mock from 'mock-http'
-import { appSession } from 'sveltekit-openid-connect'
+import { TokenUtils } from 'sveltekit-openid-connect'
 import { SessionService } from '$lib/services' // This is a service that provides session storage, not a part of this package
 import fetch from 'node-fetch'
 
@@ -44,8 +54,11 @@ const {
     AUTH0_CLIENT_ID,
     AUTH0_CLIENT_SECRET,
     COOKIE_SECRET,
-    AUTH0_AUDIENCE
+    AUTH0_AUDIENCE,
+	CSRF_ALLOWED
 } = process.env
+
+const csrfAllowed = [`https://${AUTH0_DOMAIN}`, ...(CSRF_ALLOWED || '').split(',').filter(Boolean)]
 
 const sessionName = 'sessionName'
 const auth0config = {
@@ -73,7 +86,12 @@ const auth0config = {
     }
 }
 
+// This was added to support decrypting the encrypted session cookies we utilized
+const tokenUtils = new TokenUtils(auth0config)
+
 export async function handle ({ event, resolve }) {
+	const { forbidden: forbidCSRF, response: responseCSRF } = checkCSRF(event.request)
+	if (forbidCSRF) return responseCSRF
     try {
         const request = event.request
         event.locals.isAuthenticated = false
@@ -82,48 +100,55 @@ export async function handle ({ event, resolve }) {
         const path = url.pathname
         const query = url.searchParams
         let sessionCookie
-        const req = new mock.Request({
-            url: path,
-            headers: request.headers
-        })
-        req.cookies = cookies
 
+		let sessionValid = false
+		let session = {}
+		if (cookies.session_id) event.locals.sessionId = cookies.session_id
         try {
-            if (cookies.session_id) { // Use if you are storing a session_id in a cookie to look up cookie in DB or other store
-                event.locals.sessionId = cookies.session_id
-                const session = await sessionService.get(cookies.session_id)
-                if (session) {
+			if (event.cookies.get('session_id') && event.cookies.get(sessionName)) {
+				const cookieToken = event.cookies.get(sessionName)
+				session = await sessionService.get(cookies.session_id, cookieToken)
+				try {
+					if (tokenUtils.isExpired(cookieToken)) {
+						console.warn('Token is expired, try to renew')
+						// TODO: Needs Testing
+						// TODO: Support refresh tokens?
+						return Response.redirect(`/auth/login?returnTo=${event.url.pathname}`, 401)
+					} else {
+						const idToken = tokenUtils.getIdToken({ token: cookieToken })
+						const sToken = session.data
+						if (sToken.exp < idToken.exp) {
+							console.debug('Cookie is Newer, update session')
+							// Update session from your session service
+							await session.save()
+						}
+						if (sToken.sub === idToken.sub && sToken.iss === idToken.iss) {
+							console.info('Cookie and Session match')
+							sessionValid = true
+						} else {
+							console.error('Cookie and Session failed to match, do something')
+						}
+						console.info('Token is valid, not expired')
+					}
+				} catch (tErr) {
+					console.trace(tErr)
+				}
+
+				event.locals.sessionId = cookies.session_id
+
+				if (session) {
                     // assign session information to event.locals here
                     /*
                         event.locals.user = session.data.user
                     */
                 }
-            } else if (cookies[sessionName]) {
-                const contextSession = await appSession(auth0config)(req)
-
-                // Start section for creating session inside a session store
-                const { session, sessionId } = await sessionService.createSession(contextSession.oidc)
-                sessionCookie = cookie.serialize('session_id', sessionId, {
-                    httpOnly: true,
-                    maxAge: 60 * 60 * 24 * 1,
-                    sameSite: 'lax',
-                    path: '/'
-                })
-                // End session store
-
-                // assign session information to event.locals here from either contextSession or session
-                /*
-                    event.locals.user = session.data.user
-                    event.locals.oidc = session.data.oidc
-                    event.locals.isAuthenticated = true
-                */
             } else {
                 console.warn('No session found, better send to auth')
-                event.locals.redirect = '/auth/login'
+				// perform sveltekit redirect
             }
         } catch (err) {
             console.error('problem getting app session', err.message)
-            event.locals.redirect = '/auth/login'
+            // perform sveltekit redirect
         }
 
         const response = await resolve(request) // This is required by sveltekit
@@ -141,37 +166,48 @@ export async function handle ({ event, resolve }) {
 }
 
 export async function getSession (event) {
-    const session = {
-        isAuthenticated: !!event.locals.user,
-        user: event.locals.user && event.locals.user
-    }
+    // This has been deprecated in sveltekit, it is safe to delete, it is moved to +layout.server.js
+}
 
-    if (event.locals.user) {
-        session.user.property = event.locals.user.property
-        /*
-         * This is an example of something can can be done but not what we actually use
-         *
-         */
-        /*
-            // TODO: We need to enrich the user
-            const userUrl = `${API_HOST}/api/users/me`
-            const userProfile = await fetch(userUrl, {
-                headers: {
-                    Authorization: `Bearer ${event.locals.oidc.access_token}`
-                }
-            })
-                .then(res => res.json())
-        */
-    }
+// This is required due to sveltekit changes see https://github.com/starbasehq/sveltekit-openid-connect/issues/11
+function checkCSRF (request) {
+	const url = new URL(request.url)
+	const type = request.headers.get('content-type')?.split(';')[0]
+	const forbidden =
+		request.method === 'POST' &&
+		!_.includes([url.origin, ...csrfAllowed], request.headers.get('origin')) &&
+		(type === 'application/x-www-form-urlencoded' || type === 'multipart/form-data')
 
-    return session
+	if (forbidden) {
+		console.warn('Prevent CSRF')
+		const response = new Response(`Cross-site ${request.method} form submissions are forbidden`, {
+			status: 403
+		})
+		return { forbidden, response }
+	} else {
+		return { forbidden, response: null }
+	}
+}
+```
+
+> src/routes/+layout.server.js
+
+```js
+export async function load ({ locals }) {
+	return {
+		session: {
+			isAuthenticated: locals.isAuthenticated,
+			sessionId: locals.sessionId,
+			user: locals.user
+		}
+	}
 }
 ```
 
 ### Logging in
 
 The endpoint route can be different but must be changed in the config block for routes
-> src/routes/auth/login.js
+> src/routes/auth/login/+server.js
 
 ```js
 import { Auth } from 'sveltekit-openid-connect'
@@ -211,21 +247,20 @@ const auth0 = new Auth(auth0config)
 export async function get ({ request }, ...otherProps) {
     const loginResponse = await auth0.handleLogin()
 
-    return {
-        headers: {
-            location: loginResponse.authorizationUrl,
-            'Set-Cookie': loginResponse.cookies
-        },
-        status: 302,
-        body: {}
-    }
+	return new Response(JSON.stringify({}), {
+		status: 302,
+		headers: {
+			location: loginResponse.authorizationUrl,
+			'Set-Cookie': loginResponse.cookies
+		}
+	})
 }
 ```
 
 ### Handling the callback
 
 The endpoint route can be different but must be changed in the config block for routes
-> src/routes/auth/callback.js
+> src/routes/auth/callback/+server.js
 
 ```js
 import _ from 'lodash'
@@ -299,38 +334,51 @@ export async function post ({ request }) {
         const authResponse = await auth0.handleCallback(req, res, cookies)
         const session = await appSession(auth0config)(req, res, authResponse.session)
 
-        const { sessionId } = await sessionService.createSession(authResponse.session)
-        const sessionCookie = cookie.serialize('session_id', sessionId, {
-            httpOnly: true,
-            maxAge: 60 * 60 * 24 * 1,
-            sameSite: 'lax',
-            path: '/'
-        })
+		// Optional to allow restoring an existing session
+		const rReturn = new URL(authResponse.redirect.returnTo)
+		let sessionId = cookies['session_id'] || rReturn.searchParams.get('sid')
+		let sessionRestored = false
+		let sessionCookie
 
-        return {
-            headers: {
-                location: '/',
-                'set-cookie': _.concat(authResponse.cookies, session.cookies)
-            },
-            status: 302,
-            body: {
-                error: false
-            }
-        }
+		if (sessionId) {
+			const restoredSession = await sessionService.restoreSession(sessionId, authResponse.session)
+			if (restoredSession.ok) {
+				sessionRestored = true
+			}
+		}
+
+		if (!sessionRestored) {
+			const newSession = await sessionService.createSession(authResponse.session)
+			sessionId = newSession.sessionId
+			sessionCookie = cookie.serialize('session_id', sessionId, {
+				httpOnly: true,
+				maxAge: 60 * 60 * 24 * 30,
+				sameSite: 'lax',
+				path: '/'
+			})
+		}
+
+        return new Response(JSON.stringify({
+			error: false
+		}), {
+			status: 302,
+			headers: {
+				location: '/',
+				'set-cookie': _.concat(authResponse.cookies, session.cookies, sessionCookie).filter(Boolean)
+			}
+		})
     } else {
-        return {
-            body: {
-                error: true
-            }
-        }
-    }
+		return new Response(JSON.stringify({
+			error: true
+		}))
+	}
 }
 
 ```
 
 ### Destroying the Session
 
-> src/routes/auth/logout.js
+> src/routes/auth/logout/+server.js
 
 ```js
 import * as cookie from 'cookie'
@@ -385,6 +433,7 @@ export async function get ({ locals, request }) {
     const res = new mock.Response()
     const logoutResponse = await auth0.handleLogout(request, res, cookies, Object.assign(locals))
 
+	// Optional, remove this if you want to support restoring previous session
     const sessionCookie = cookie.serialize('session_id', 'deleted', {
         httpOnly: true,
         expires: new Date(),
@@ -392,14 +441,13 @@ export async function get ({ locals, request }) {
         path: '/'
     })
 
-    return {
-        headers: {
-            location: logoutResponse.returnURL,
-            'Set-Cookie': [...logoutResponse.cookies, sessionCookie]
-        },
-        status: 302,
-        body: {}
-    }
+    return new Response(JSON.stringify({}), {
+		status: 302,
+		headers: {
+			location: logoutResponse.returnURL,
+			'Set-Cookie': [...logoutResponse.cookies]
+		}
+	})
 }
 ```
 
@@ -434,7 +482,7 @@ class SessionService {
             email,
             user_id: sub
         }
-        // TODO: we should be caching this somehow, right?
+
         const userProfile = await userService.get(userData)
 
         const { UserId, ...other } = userProfile
@@ -470,6 +518,49 @@ class SessionService {
     async decodeJwt (jwt) {
         return jwtDecode(jwt)
     }
+
+	async restoreSession (sessionId, authSession) {
+		const rSession = await getSession(sessionId)
+
+		if (!rSession) return { ok: false }
+
+		const session = await jwtDecode(authSession.id_token)
+
+		// enrich with raw oidc session data
+		session.oidc = authSession
+
+		const { email, sub } = session
+		const [identitySource, userIdentifier] = sub.split('|')
+		const userData = {
+			identitySource,
+			userIdentifier,
+			email,
+			user_id: sub
+		}
+
+		if (session.sub !== rSession.data.sub) {
+			console.info(`Session is not for authed User ${session.sub} vs ${rSession.data.sub}`)
+			return { ok: false }
+		}
+
+		const userProfile = await userService.get(userData)
+
+		const { orgs, projects } = userProfile
+		session.user = {}
+		session.user.orgs = orgs || []
+		session.user.projects = projects || []
+
+		try {
+			rSession.data = Object.assign(rSession.data, session)
+			rSession.changed('data', true)
+
+			await rSession.save()
+			return { ok: true }
+		} catch (e) {
+			console.error(e.message)
+			return { ok: false }
+		}
+	}
 }
 
 async function getSession (sessionId) {
@@ -541,7 +632,6 @@ class UserService {
         const [user, created] = await sqldb.User.findOrCreate({
             where: {
                 email: userData.email
-                // TODO: should we check identity source?
             },
             defaults: userData
         })
