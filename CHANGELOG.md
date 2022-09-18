@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.2](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.1...v1.4.2) (2022-09-18)
+
+
+### 📝 Docs
+
+* update README.md for sveltekit breaking changes ([9e9e784](https://github.com/starbasehq/sveltekit-openid-connect/commit/9e9e78402c6e48bc77aeda8e808db25d47e6ff9b))
+
 ### [1.4.1](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.0...v1.4.1) (2022-09-08)
 
 
