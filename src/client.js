@@ -49,7 +49,7 @@ async function get (config) {
 		? issuer.id_token_signing_alg_values_supported
 		: []
 	if (!issuerTokenAlgs.includes(config.idTokenSigningAlg)) {
-		console.log(
+		console.error(
 			'ID token algorithm %o is not supported by the issuer. Supported ID token algorithms are: %o.',
 			config.idTokenSigningAlg,
 			issuerTokenAlgs
@@ -64,7 +64,7 @@ async function get (config) {
 		: []
 	issuerRespTypes.map(sortSpaceDelimitedString)
 	if (!issuerRespTypes.includes(configRespType)) {
-		console.log(
+		console.warn(
 			'Response type %o is not supported by the issuer. ' +
         'Supported response types are: %o.',
 			configRespType,
@@ -77,7 +77,7 @@ async function get (config) {
 		? issuer.response_modes_supported
 		: []
 	if (configRespMode && !issuerRespModes.includes(configRespMode)) {
-		console.log(
+		console.warn(
 			'Response mode %o is not supported by the issuer. ' +
         'Supported response modes are %o.',
 			configRespMode,
@@ -110,7 +110,7 @@ async function get (config) {
 				}
 			})
 		} else {
-			console.log('the issuer does not support RP-Initiated Logout')
+			console.warn('the issuer does not support RP-Initiated Logout')
 		}
 	}
 

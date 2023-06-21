@@ -177,10 +177,10 @@ class ResponseContext {
 		let returnTo = config.baseURL
 		if (options.returnTo) {
 			returnTo = options.returnTo
-			console.log('req.oidc.login() called with returnTo: %s', returnTo)
+			console.debug('req.oidc.login() called with returnTo: %s', returnTo)
 		} else if (req.method === 'GET' && req.originalUrl) {
 			returnTo = req.originalUrl
-			console.log('req.oidc.login() without returnTo, using: %s', returnTo)
+			console.debug('req.oidc.login() without returnTo, using: %s', returnTo)
 		}
 
 		options = {
@@ -204,7 +204,7 @@ class ResponseContext {
 
 		const usePKCE = options.authorizationParams.response_type.includes('code')
 		if (usePKCE) {
-			console.log(
+			console.debug(
 				'response_type includes code, the authorization request will use PKCE'
 			)
 			stateValue.code_verifier = transient.generateCodeVerifier()
@@ -250,7 +250,7 @@ class ResponseContext {
 			})
 
 			const authorizationUrl = client.authorizationUrl(authParams)
-			console.log('redirecting to %s', authorizationUrl)
+			console.debug('redirecting to %s', authorizationUrl)
 			// res.redirect(authorizationUrl)
 			return {
 				authorizationUrl,
@@ -263,13 +263,13 @@ class ResponseContext {
 	}
 
 	async logout (params = {}, res) {
-		console.log('logout params', params)
+		console.debug('logout params', params)
 		let { config, req, transient } = weakRef(this)
 		// next = cb(next).once()
 		const client = await getClient(config)
 
 		let returnURL = params.returnTo || config.routes.postLogoutRedirect
-		console.log('req.oidc.logout() with return url: %s', returnURL)
+		console.debug('req.oidc.logout() with return url: %s', returnURL)
 
 		if (url.parse(returnURL).host === null) {
 			returnURL = urlJoin(config.baseURL, returnURL)
@@ -279,7 +279,7 @@ class ResponseContext {
 
 		// if (!req.oidc.isAuthenticated()) {
 		if (!params.isAuthenticated) {
-			console.log('end-user already logged out, redirecting to %s', returnURL)
+			console.debug('end-user already logged out, redirecting to %s', returnURL)
 			// 	return res.redirect(returnURL)
 			return {
 				returnURL
@@ -290,7 +290,7 @@ class ResponseContext {
 		// req[config.session.name] = undefined
 
 		if (!config.idpLogout) {
-			console.log('performing a local only logout, redirecting to %s', returnURL)
+			console.debug('performing a local only logout, redirecting to %s', returnURL)
 			// return res.redirect(returnURL)
 			return {
 				returnURL
@@ -302,7 +302,7 @@ class ResponseContext {
 			id_token_hint
 		})
 
-		console.log('logging out of identity provider, redirecting to %s', returnURL)
+		console.debug('logging out of identity provider, redirecting to %s', returnURL)
 		transient.store(config.session.name, req, res, {
 			sameSite: config.session.cookie.sameSite,
 			value: 'deleted',

@@ -4,7 +4,7 @@ This is an attempt to port [express-openid-connect](https://github.com/auth0/exp
 
 [![NPM version](https://img.shields.io/npm/v/sveltekit-openid-connect.svg?style=flat-square)](https://npmjs.org/package/sveltekit-openid-connect)
 
-## ⚠️ WARNING: This is not fully tested, there are unnecessary console.logs as well as some unimplemented code. Open issues for questions or concerns ⚠️
+### Open issues for questions or concerns
 
 ## Table of Contents
 

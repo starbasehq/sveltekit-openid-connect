@@ -149,10 +149,10 @@ class TransientCookieHandler {
 	getOnce (key, req, res) {
 		// if (!req[COOKIES]) {
 		if (!req.cookies) {
-			console.log('failed to find cookies')
+			console.error('failed to find cookies')
 			return undefined
 		}
-		console.log('found cookies')
+		console.debug('found cookies')
 
 		// let value = getCookieValue(key, req[COOKIES][key], this.keyStore)
 		let value = getCookieValue(key, req.cookies[key], this.keyStore)

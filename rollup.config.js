@@ -1,5 +1,4 @@
 import json from '@rollup/plugin-json'
-// import { terser } from 'rollup-plugin-terser'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import pkg from './package.json'
@@ -11,21 +10,10 @@ export default {
 			file: 'dist/bundle.cjs',
 			format: 'cjs'
 		},
-		// {
-		// 	file: 'dist/bundle.min.js',
-		// 	format: 'iife',
-		// 	name: 'version',
-		// 	plugins: [terser()]
-		// },
 		{
 			file: 'dist/bundle.mjs',
 			format: 'es'
-		},
-		// {
-		// 	file: 'dist/bundle.min.mjs',
-		// 	format: 'es',
-		// 	plugins: [terser()]
-		// }
+		}
 	],
 	plugins: [
 		commonjs(),

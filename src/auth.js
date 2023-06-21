@@ -72,7 +72,7 @@ export default class Auth {
 				})
 				openidState = decodeState(state)
 			} catch (err) {
-				console.log(err)
+				console.error(err)
 				throw createError.BadRequest(err.message)
 			}
 
@@ -94,7 +94,7 @@ export default class Auth {
 			// Object.assign(req[config.session.name], session)
 			// attemptSilentLogin.resumeSilentLogin(req, res)
 		} catch (err) {
-			console.log('auth.js handleCallback', err)
+			console.debug('auth.js handleCallback', err)
 			return {
 				session: undefined,
 				redirect: this.config.baseURL

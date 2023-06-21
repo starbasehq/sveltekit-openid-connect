@@ -14,7 +14,7 @@ import base64url from 'base64url'
  */
 function defaultState (req, options) {
 	const state = { returnTo: options.returnTo || req.originalUrl }
-	console.log('adding default state %O', state)
+	console.debug('adding default state %O', state)
 	return state
 }
 

@@ -107,7 +107,7 @@ function appSession (params) {
 		// session was deleted or is empty, this matches all session cookies (chunked or unchunked)
 		// and clears them, essentially cleaning up what we've set in the past that is now trash
 		if (!req[sessionName] || !Object.keys(req[sessionName]).length) {
-			console.log(
+			console.warn(
 				'session was deleted or is empty, clearing all matching session cookies'
 			)
 			for (const cookieName of Object.keys(req.cookies)) {
@@ -140,7 +140,7 @@ function appSession (params) {
 
 			const chunkCount = Math.ceil(value.length / CHUNK_BYTE_SIZE)
 			if (chunkCount > 1) {
-				console.log('cookie size greater than %d, chunking', CHUNK_BYTE_SIZE)
+				console.debug('cookie size greater than %d, chunking', CHUNK_BYTE_SIZE)
 				for (let i = 0; i < chunkCount; i++) {
 					const chunkValue = value.slice(
 						i * CHUNK_BYTE_SIZE,
@@ -230,7 +230,7 @@ function appSession (params) {
 
 	return async (req, res, sessionData) => {
 		if (req.hasOwnProperty(sessionName)) {
-			console.log(
+			console.warn(
 				'request object (req) already has %o property, this is indicative of a middleware setup problem',
 				sessionName
 			)
@@ -269,7 +269,7 @@ function appSession (params) {
 						return parseInt(a, 10) - parseInt(b, 10)
 					})
 					.map(([i, chunk]) => {
-						console.log('reading session chunk from %s.%d cookie', sessionName, i)
+						console.debug('reading session chunk from %s.%d cookie', sessionName, i)
 						return chunk
 					})
 					.join('')
@@ -305,14 +305,14 @@ function appSession (params) {
 			}
 		} catch (err) {
 			if (err instanceof AssertionError) {
-				console.log('existing session was rejected because', err.message)
+				console.error('existing session was rejected because', err.message)
 			} else if (err instanceof JOSEError) {
-				console.log(
+				console.error(
 					'existing session was rejected because it could not be decrypted',
 					err
 				)
 			} else {
-				console.log('unexpected error handling session', err)
+				console.error('unexpected error handling session', err)
 			}
 		}
 
