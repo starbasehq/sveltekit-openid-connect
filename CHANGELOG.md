@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.5](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.4...v1.4.5) (2023-06-21)
+
+
+### Chore
+
+* cleanup console.logs and move to console.[info,debug,error,warn] ([033fe03](https://github.com/starbasehq/sveltekit-openid-connect/commit/033fe03cad615662a87841a69745cb3d80dda61c))
+
 ### [1.4.4](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.3...v1.4.4) (2023-06-21)
 
 
