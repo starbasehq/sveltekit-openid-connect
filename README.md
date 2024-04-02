@@ -456,7 +456,7 @@ export async function get ({ locals, request }) {
 > src/lib/services/session.js
 
 ```js
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import { v4 as uuidv4 } from 'uuid'
 import DB from './db' // Custom database service using sequelize
 import UserService from './user'

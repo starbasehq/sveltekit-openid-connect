@@ -15,7 +15,7 @@ import getConfig from './config'
 // import COOKIES from './cookies'
 import { prepareCookies } from './cookies'
 import { encryption as deriveKey } from './hkdf'
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 
 const epoch = () => (Date.now() / 1000) | 0
 const CHUNK_BYTE_SIZE = 4000

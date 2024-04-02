@@ -3,7 +3,7 @@ import {
 	JWKS,
 	JWE
 } from 'jose'
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import getConfig from './config'
 import { encryption as deriveKey } from './hkdf'
 
