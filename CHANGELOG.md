@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.6...v2.0.0) (2024-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to match express-openid-connect v2.17.1
+
+### Refactor
+
+* update to match express-openid-connect v2.17.1 ([934b7ef](https://github.com/starbasehq/sveltekit-openid-connect/commit/934b7efbaefb6439281e5339cf1fce1dcacfb8c0))
+
 ### [1.4.6](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.5...v1.4.6) (2024-04-02)
 
 
