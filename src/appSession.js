@@ -2,7 +2,6 @@
 import _ from 'lodash'
 import { strict as assert, AssertionError } from 'assert'
 import {
-	JWE,
 	errors
 } from 'jose'
 import * as jose from 'jose'
@@ -85,11 +84,11 @@ function appSession (params) {
 	}
 
 	function encrypt (payload, headers) {
-		return JWE.encrypt(payload, current, { alg, enc, ...headers })
+		return jose.JWE.encrypt(payload, current, { alg, enc, ...headers })
 	}
 
 	function decrypt (jwe) {
-		return JWE.decrypt(jwe, keystore, {
+		return jose.JWE.decrypt(jwe, keystore, {
 			complete: true,
 			contentEncryptionAlgorithms: [enc],
 			keyManagementAlgorithms: [alg]
