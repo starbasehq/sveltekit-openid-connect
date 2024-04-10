@@ -1,9 +1,9 @@
 import { Issuer, custom } from 'openid-client'
-import memoize from 'p-memoize'
 import url from 'url'
 import urlJoin from 'url-join'
 import pkg from '../package.json'
 // const debug = req_uire('./debug')('client')
+import { JWK } from 'jose'
 
 const telemetryHeader = {
 	name: 'sveltekit-oidc',
@@ -17,13 +17,11 @@ function sortSpaceDelimitedString (string) {
 	return string.split(' ').sort().join(' ')
 }
 
-const getIssuer = memoize((issuer) => Issuer.discover(issuer))
-
 async function get (config) {
 	const defaultHttpOptions = (options) => {
 		options.headers = {
 			...options.headers,
-			'User-Agent': `${pkg.name}/${pkg.version}`,
+			'User-Agent': config.httpUserAgent || `${pkg.name}/${pkg.version}`,
 			...(config.enableTelemetry
 				? {
 					'Auth0-Client': Buffer.from(
@@ -32,7 +30,8 @@ async function get (config) {
 				}
 				: undefined)
 		}
-		options.timeout = 5000
+		options.timeout = config.httpTimeout
+		options.agent = config.httpAgent
 		return options
 	}
 	const applyHttpOptionsCustom = (entity) =>
@@ -40,7 +39,7 @@ async function get (config) {
 
 	applyHttpOptionsCustom(Issuer)
 	// console.log('Discover Issuer', config.issuerBaseURL)
-	const issuer = await getIssuer(config.issuerBaseURL)
+	const issuer = await Issuer.discover(config.issuerBaseURL);
 	applyHttpOptionsCustom(issuer)
 
 	const issuerTokenAlgs = Array.isArray(
@@ -85,36 +84,85 @@ async function get (config) {
 		)
 	}
 
-	const client = new issuer.Client({
-		client_id: config.clientID,
-		client_secret: config.clientSecret,
-		id_token_signed_response_alg: config.idTokenSigningAlg,
-		token_endpoint_auth_method: config.clientAuthMethod
-	})
+	if (
+		config.pushedAuthorizationRequests &&
+		!issuer.pushed_authorization_request_endpoint
+	) {
+		throw new TypeError(
+			'pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests'
+		)
+	}
+
+	let jwks;
+	if (config.clientAssertionSigningKey) {
+		const jwk = JWK.asKey(config.clientAssertionSigningKey).toJWK(true);
+		jwks = { keys: [jwk] };
+	}
+
+	const client = new issuer.Client(
+		{
+			client_id: config.clientID,
+			client_secret: config.clientSecret,
+			id_token_signed_response_alg: config.idTokenSigningAlg,
+			token_endpoint_auth_method: config.clientAuthMethod,
+			...(config.clientAssertionSigningAlg && {
+				token_endpoint_auth_signing_alg: config.clientAssertionSigningAlg,
+			}),
+		},
+		jwks
+	)
 	applyHttpOptionsCustom(client)
 	client[custom.clock_tolerance] = config.clockTolerance
 
-	if (config.idpLogout && !issuer.end_session_endpoint) {
+	if (config.idpLogout) {
 		if (
 			config.auth0Logout ||
-			url.parse(issuer.issuer).hostname.match('\\.auth0\\.com$')
+			(url.parse(issuer.issuer).hostname.match('\\.auth0\\.com$') &&
+				config.auth0Logout !== false)
 		) {
 			Object.defineProperty(client, 'endSessionUrl', {
 				value (params) {
+					const { id_token_hint, post_logout_redirect_uri, ...extraParams } =
+						params;
 					const parsedUrl = url.parse(urlJoin(issuer.issuer, '/v2/logout'))
 					parsedUrl.query = {
+						...extraParams,
 						returnTo: params.post_logout_redirect_uri,
 						client_id: client.client_id
 					}
+
+					Object.entries(parsedUrl.query).forEach(([key, value]) => {
+						if (value === null || value === undefined) {
+							delete parsedUrl.query[key]
+						}
+					})
 					return url.format(parsedUrl)
 				}
 			})
-		} else {
+		} else if (!issuer.end_session_endpoint) {
 			console.warn('the issuer does not support RP-Initiated Logout')
 		}
 	}
 
-	return client
+	return { client, issuer }
 }
 
-export default memoize(get)
+const cache = new Map();
+let timestamp = 0;
+
+function getClient (config) {
+	const { discoveryCacheMaxAge: cacheMaxAge } = config;
+	const now = Date.now();
+	if (cache.has(config) && now < timestamp + cacheMaxAge) {
+		return cache.get(config);
+	}
+	timestamp = now;
+	const promise = get(config).catch((e) => {
+		cache.delete(config);
+		throw e;
+	});
+	cache.set(config, promise);
+	return promise;
+}
+
+export default getClient

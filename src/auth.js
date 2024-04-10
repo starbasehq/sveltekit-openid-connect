@@ -1,3 +1,4 @@
+import _ from 'lodash'
 // const cb = req_uire('cb')
 import createError from 'http-errors'
 
@@ -6,9 +7,12 @@ import getConfig from './config'
 import getClient from './client'
 import TransientCookieHandler from './transientHandler'
 import { ResponseContext } from './context'
-import _ from 'lodash'
-import { decodeState } from './hooks/getLoginState'
 import AppSession from './appSession'
+
+import { decodeState } from './hooks/getLoginState'
+import isLoggedOut from '../src/hooks/backchannelLogout/isLoggedOut'
+
+// Based on middleware/auth.js from express-openid-connect
 
 /**
  * Returns a router with two routes /login and /callback
@@ -48,7 +52,8 @@ export default class Auth {
 			let session
 
 			try {
-				const callbackParams = client.callbackParams(req)
+				// TODO: Client is now nested in response (client.client)
+				const callbackParams = client.client.callbackParams(req)
 				// console.log('callbackParams', callbackParams, redirectUri)
 				const authVerification = this.transient.getOnce(
 					'auth_verification',
@@ -64,7 +69,7 @@ export default class Auth {
 					? JSON.parse(authVerification)
 					: {}
 
-				session = await client.callback(redirectUri, callbackParams, {
+				session = await client.client.callback(redirectUri, callbackParams, { // TODO: This no longer exists in source package, so how do we handle this?
 					max_age,
 					code_verifier,
 					nonce,

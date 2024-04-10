@@ -1,6 +1,9 @@
 import Joi from 'joi'
+import crypto from 'crypto'
 import { defaultState as getLoginState } from './hooks/getLoginState'
 const isHttps = /^https:/i
+
+const defaultSessionIdGenerator = () => crypto.randomBytes(16).toString('hex');
 
 const paramsSchema = Joi.object({
 	secret: Joi.alternatives([
@@ -33,8 +36,31 @@ const paramsSchema = Joi.object({
 		})
 			.optional()
 			.default(7 * 24 * 60 * 60), // 7 days,
-		name: Joi.string().token().optional().default('appSession'),
-		store: Joi.object().optional(),
+		name: Joi.string()
+			.pattern(/^[0-9a-zA-Z_.-]+$/, { name: 'cookie name' })
+			.optional()
+			.default('appSession'),
+		store: Joi.object().optional()
+			.when(Joi.ref('/backchannelLogout'), {
+				not: false,
+				then: Joi.when('/backchannelLogout.store', {
+					not: Joi.exist(),
+					then: Joi.when('/backchannelLogout.isLoggedOut', {
+						not: Joi.exist(),
+						then: Joi.object().required().messages({
+							'any.required': `Back-Channel Logout requires a "backchannelLogout.store" (you can also reuse "session.store" if you have stateful sessions) or custom hooks for "isLoggedOut" and "onLogoutToken".`,
+						}),
+					}),
+				}),
+			}),
+		genid: Joi.function()
+			.maxArity(1)
+			.optional()
+			.default(() => defaultSessionIdGenerator),
+		signSessionStoreCookie: Joi.boolean().optional().default(false),
+		requireSignedSessionStoreCookie: Joi.boolean()
+			.optional()
+			.default(Joi.ref('signSessionStoreCookie')),
 		cookie: Joi.object({
 			domain: Joi.string().optional(),
 			transient: Joi.boolean().optional().default(false),
@@ -65,7 +91,17 @@ const paramsSchema = Joi.object({
 	})
 		.default()
 		.unknown(false),
-	auth0Logout: Joi.boolean().optional().default(false),
+	transactionCookie: Joi.object({
+		sameSite: Joi.string()
+			.valid('Lax', 'Strict', 'None')
+			.optional()
+			.default(Joi.ref('...session.cookie.sameSite')),
+		name: Joi.string().optional().default('auth_verification'),
+		})
+		.default()
+		.unknown(false),
+	auth0Logout: Joi.boolean().optional(),
+	tokenEndpointParams: Joi.object().optional(),
 	authorizationParams: Joi.object({
 		response_type: Joi.string()
 			.optional()
@@ -86,6 +122,22 @@ const paramsSchema = Joi.object({
 		.optional()
 		.unknown(true)
 		.default(),
+	logoutParams: Joi.object().optional(),
+	backchannelLogout: Joi.alternatives([
+		Joi.object({
+		store: Joi.object().optional(),
+		onLogin: Joi.alternatives([
+			Joi.function(),
+			Joi.boolean().valid(false),
+		]).optional(),
+		isLoggedOut: Joi.alternatives([
+			Joi.function(),
+			Joi.boolean().valid(false),
+		]).optional(),
+		onLogoutToken: Joi.function().optional(),
+		}),
+		Joi.boolean(),
+	]).default(false),
 	baseURL: Joi.string()
 		.uri()
 		.required()
@@ -99,14 +151,13 @@ const paramsSchema = Joi.object({
 	clientID: Joi.string().required(),
 	clientSecret: Joi.string()
 		.when(
-			Joi.ref('authorizationParams.response_type', {
-				adjust: (value) => value && value.includes('code')
+			Joi.ref('clientAuthMethod', {
+				adjust: (value) => value && value.includes('client_secret'),
 			}),
 			{
 				is: true,
 				then: Joi.string().required().messages({
-					'any.required':
-            '"clientSecret" is required for a response_type that includes code'
+					'any.required': `"clientSecret" is required for the "clientAuthMethod" "{{clientAuthMethod}}"`
 				})
 			}
 		)
@@ -156,6 +207,7 @@ const paramsSchema = Joi.object({
 	issuerBaseURL: Joi.string().uri().required(),
 	legacySameSiteCookie: Joi.boolean().optional().default(true),
 	authRequired: Joi.boolean().optional().default(true),
+	pushedAuthorizationRequests: Joi.boolean().optional().default(false),
 	routes: Joi.object({
 		login: Joi.alternatives([
 			Joi.string().uri({ relativeOnly: true }),
@@ -165,19 +217,86 @@ const paramsSchema = Joi.object({
 			Joi.string().uri({ relativeOnly: true }),
 			Joi.boolean().valid(false)
 		]).default('/logout'),
-		callback: Joi.string().uri({ relativeOnly: true }).default('/callback'),
-		postLogoutRedirect: Joi.string().uri({ allowRelative: true }).default('')
-	})
+		callback: Joi.alternatives([
+			Joi.string().uri({ relativeOnly: true }),
+			Joi.boolean().valid(false),
+		]).default('/callback'),
+		postLogoutRedirect: Joi.string().uri({ allowRelative: true }).default(''),
+		backchannelLogout: Joi.string()
+			.uri({ allowRelative: true })
+			.default('/backchannel-logout'),
+		})
 		.default()
 		.unknown(false),
 	clientAuthMethod: Joi.string()
-		.valid('client_secret_basic', 'client_secret_post', 'none')
+		.valid(
+			'client_secret_basic',
+			'client_secret_post',
+			'client_secret_jwt',
+			'private_key_jwt',
+			'none'
+		)
 		.optional()
 		.default((parent) => {
-			return parent.authorizationParams.response_type === 'id_token'
-				? 'none'
-				: 'client_secret_basic'
-		})
+			if (
+				parent.authorizationParams.response_type === 'id_token' &&
+				!parent.pushedAuthorizationRequests
+			) {
+				return 'none';
+			}
+			if (parent.clientAssertionSigningKey) {
+				return 'private_key_jwt';
+			}
+			return 'client_secret_basic';
+			})
+			.when(
+			Joi.ref('authorizationParams.response_type', {
+				adjust: (value) => value && value.includes('code'),
+			}),
+			{
+				is: true,
+				then: Joi.string().invalid('none').messages({
+				'any.only': 'Public code flow clients are not supported.',
+				}),
+			}
+			)
+			.when(Joi.ref('pushedAuthorizationRequests'), {
+			is: true,
+			then: Joi.string().invalid('none').messages({
+				'any.only': 'Public PAR clients are not supported.',
+			}),
+		}),
+	clientAssertionSigningKey: Joi.any()
+		.optional()
+		.when(Joi.ref('clientAuthMethod'), {
+		is: 'private_key_jwt',
+		then: Joi.any().required().messages({
+			'any.required':
+			'"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"',
+		}),
+		}), // <Object> | <string> | <Buffer> | <KeyObject>,
+	clientAssertionSigningAlg: Joi.string()
+		.valid(
+		'RS256',
+		'RS384',
+		'RS512',
+		'PS256',
+		'PS384',
+		'PS512',
+		'ES256',
+		'ES256K',
+		'ES384',
+		'ES512',
+		'EdDSA'
+		)
+		.optional(),
+	discoveryCacheMaxAge: Joi.number()
+		.optional()
+		.min(0)
+		.default(10 * 60 * 1000),
+	httpTimeout: Joi.number().optional().min(500).default(5000),
+	httpUserAgent: Joi.string().optional(),
+	httpAgent: Joi.object().optional()
 })
 
 function getConfig (config = {}) {

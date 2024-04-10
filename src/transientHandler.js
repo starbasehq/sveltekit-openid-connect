@@ -1,65 +1,14 @@
 import { generators } from 'openid-client'
-import { JWKS, JWS, JWK } from 'jose'
-import { signing as deriveKey } from './hkdf'
-// import COOKIES from './cookies'
-
-const header = { alg: 'HS256', b64: false, crit: ['b64'] }
-const getPayload = (cookie, value) => Buffer.from(`${cookie}=${value}`)
-const flattenedJWSFromCookie = (cookie, value, signature) => ({
-	protected: Buffer.from(JSON.stringify(header))
-		.toString('base64')
-		.replace(/=/g, '')
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_'),
-	payload: getPayload(cookie, value),
-	signature
-})
-const generateSignature = (cookie, value, key) => {
-	const payload = getPayload(cookie, value)
-	return JWS.sign.flattened(payload, key, header).signature
-}
-const verifySignature = (cookie, value, signature, keystore) => {
-	try {
-		return !!JWS.verify(
-			flattenedJWSFromCookie(cookie, value, signature),
-			keystore,
-			{ algorithm: 'HS256', crit: ['b64'] }
-		)
-	} catch (err) {
-		return false
-	}
-}
-const getCookieValue = (cookie, value, keystore) => {
-	if (!value) {
-		return undefined
-	}
-	let signature;
-	[value, signature] = value.split('.')
-	if (verifySignature(cookie, value, signature, keystore)) {
-		return value
-	}
-
-	return undefined
-}
-
-const generateCookieValue = (cookie, value, key) => {
-	const signature = generateSignature(cookie, value, key)
-	return `${value}.${signature}`
-}
+import {
+	signCookie as generateCookieValue,
+	verifyCookie as getCookieValue,
+	getKeyStore
+} from './crypto'
 
 class TransientCookieHandler {
 	constructor ({ secret, session, legacySameSiteCookie }) {
-		let current
+		let [current, keystore] = getKeyStore(secret);
 		this.cookies = []
-		const secrets = Array.isArray(secret) ? secret : [secret]
-		let keystore = new JWKS.KeyStore()
-		secrets.forEach((secretString, i) => {
-			const key = JWK.asKey(deriveKey(secretString))
-			if (i === 0) {
-				current = key
-			}
-			keystore.add(key)
-		})
 
 		if (keystore.size === 1) {
 			keystore = current
@@ -153,10 +102,11 @@ class TransientCookieHandler {
 			return undefined
 		}
 		console.debug('found cookies')
+		const { secure, sameSite } = this.sessionCookieConfig
 
 		// let value = getCookieValue(key, req[COOKIES][key], this.keyStore)
 		let value = getCookieValue(key, req.cookies[key], this.keyStore)
-		this.deleteCookie(key, res)
+		this.deleteCookie(key, res, { secure, sameSite });
 
 		if (this.legacySameSiteCookie) {
 			const fallbackKey = `_${key}`
@@ -208,14 +158,18 @@ class TransientCookieHandler {
    *
    * @param {String} name Cookie name
    * @param {Object} res Express Response object
+   * @param {Object?} opts Optional SameSite and Secure cookie options for modern browsers
    */
-	deleteCookie (cookieName) {
+	deleteCookie (cookieName, opts = {}) {
 		const { domain, path } = this.sessionCookieConfig
+		const { sameSite, secure } = opts;
 		const attributes = {
 			domain,
 			expires: 'Thu, 01 Jan 1970 00:00:00 GMT',
 			HttpOnly: true,
-			path
+			path,
+			sameSite,
+			secure
 		}
 		// res.clearCookie(name, {
 		// 	domain,

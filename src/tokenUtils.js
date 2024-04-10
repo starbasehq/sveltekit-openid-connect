@@ -1,9 +1,8 @@
 import {
-	JWK,
 	JWKS,
-	JWE
+	JWK
 } from 'jose'
-import { jwtDecode } from 'jwt-decode'
+import * as jose from 'jose'
 import getConfig from './config'
 import { encryption as deriveKey } from './hkdf'
 
@@ -42,11 +41,11 @@ export default class TokenUtils {
 	}
 
 	encrypt (payload, headers) {
-		return JWE.encrypt(payload, current, { alg, enc, ...headers })
+		return jose.GeneralEncrypt.encrypt(payload, current, { alg, enc, ...headers })
 	}
 
 	decrypt (jwe) {
-		return JWE.decrypt(jwe, this.keystore, {
+		return jose.JWE.decrypt(jwe, this.keystore, {
 			complete: true,
 			contentEncryptionAlgorithms: [enc],
 			keyManagementAlgorithms: [alg]
@@ -70,7 +69,7 @@ export default class TokenUtils {
 		if (token) {
 			id_token = this.parse(token).id_token
 		}
-		return jwtDecode(id_token)
+		return jose.JWT.decode(id_token)
 	}
 
 	calculateExp (iat, uat) {
