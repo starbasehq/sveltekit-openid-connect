@@ -1,6 +1,6 @@
 {
   "name": "sveltekit-openid-connect",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "SvelteKit module to protect web applications using OpenID Connect.",
   "keywords": [
     "svelte",

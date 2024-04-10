@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.0.1](https://github.com/starbasehq/sveltekit-openid-connect/compare/v2.0.0...v2.0.1) (2024-04-10)
+
+
+### Bug Fixes
+
+* remove import of JWE and call from jose ([f8727d1](https://github.com/starbasehq/sveltekit-openid-connect/commit/f8727d18822fd6b7de0b391cca64bae8f6d2cd41))
+
 ## [2.0.0](https://github.com/starbasehq/sveltekit-openid-connect/compare/v1.4.6...v2.0.0) (2024-04-10)
 
 
