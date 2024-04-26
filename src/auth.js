@@ -123,7 +123,8 @@ export default class Auth {
 
 	async handleLogout (req, res, reqCookies, context) {
 		let next
-		const { isAuthenticated, oidc: cOidc} = context
+		const { oidc: cOidc} = context
+		const isAuthenticated = !!context.user
 		const oidc = new ResponseContext(this.config, req, res, next, this.transient)
 		const returnTo = this.config.baseURL
 		const logoutResponse = await oidc.logout({ returnTo, isAuthenticated, oidc: cOidc })
